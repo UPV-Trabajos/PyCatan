@@ -170,3 +170,4 @@ pyproject.toml
 # Other
 Traces/
 .vscode/
+Tests/test_traces
