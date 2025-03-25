@@ -120,13 +120,13 @@ toolbox.register("evaluate", evaluate)
 # -------------------------------------------------------------------
 
 # Selección por torneo
-# toolbox.register("select", tools.selTournament, tournsize=5)
-toolbox.register("select", tools.selRoulette)
+toolbox.register("select", tools.selTournament, tournsize=5)
+# toolbox.register("select", tools.selRoulette)
 
 # Cruce: blend crossover con normalización
 
 
-def cxBlendNormalize(ind1, ind2, alpha=0.3):
+def cxBlendNormalize(ind1, ind2, alpha=0.8):
     """
     Se utilizará cxBlend, la cual realiza lo siguiente:
     1. Se halla una diferencia:
