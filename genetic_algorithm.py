@@ -171,7 +171,7 @@ toolbox.register("mutate", mutGaussianNormalize, mu=0, sigma=0.1, indpb=0.2)
 def main():
     start_time = time.time()  # Inicio del contador
     random.seed(42)
-    # Población de 10 individuos
+    # Población de 20 individuos
     pop = toolbox.population(n=20)
 
     # Parámetros del algoritmo evolutivo:
@@ -198,21 +198,8 @@ def main():
     for gen in range(NGEN):
         print(f"--- Generación {gen} ---")
         # Seleccionar la descendencia
-        # Obtener los 2 mejores individuos de la generación actual (elitismo)
-        elite_individuals = tools.selBest(
-            pop, 2)  # Seleccionamos los 2 mejores
-
-        # Crear una lista de individuos sin los de élite para la selección
-        remaining_pop = [ind for ind in pop if ind not in elite_individuals]
-
-        # Seleccionar el resto de la descendencia sin incluir a los élite
-        offspring = toolbox.select(
-            remaining_pop, len(pop) - len(elite_individuals))
-        # Clonar para evitar referencias
+        offspring = toolbox.select(pop, len(pop))
         offspring = list(map(toolbox.clone, offspring))
-
-        # offspring = toolbox.select(pop, len(pop))
-        # offspring = list(map(toolbox.clone, offspring))
 
         # Aplicar cruce en parejas
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
@@ -234,8 +221,7 @@ def main():
             ind.fitness.values = fit
 
         # Actualizar la población
-        # pop[:] = offspring
-        pop[:] = elite_individuals + offspring
+        pop[:] = offspring
 
         # Estadísticas de la generación actual
         fits = [ind.fitness.values[0] for ind in pop]

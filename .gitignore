@@ -171,3 +171,4 @@ pyproject.toml
 Traces/
 .vscode/
 Tests/test_traces
+.DS_Store
