@@ -10,7 +10,6 @@ from Agents.AlexPelochoJaimeAgent import AlexPelochoJaimeAgent as apja
 from Agents.AlexPastorAgent import AlexPastorAgent as apa
 from Agents.AdrianHerasAgent import AdrianHerasAgent as aha
 from Agents.RandomAgent import RandomAgent as ra
-import os
 import time
 import random
 import numpy as np
@@ -80,7 +79,7 @@ def simular_catan(idx_agents_to_play: list):
 
 
 def evaluate(individual):
-    num_partidas = 20  # Puedes ajustar el número de simulaciones
+    num_partidas = 100  # Puedes ajustar el número de simulaciones
     total_score = 0.0
     results = []
     for _ in range(num_partidas):
@@ -173,12 +172,12 @@ def main():
     start_time = time.time()  # Inicio del contador
     random.seed(42)
     # Población de 20 individuos
-    pop = toolbox.population(n=20)
+    pop = toolbox.population(n=100)
 
     # Parámetros del algoritmo evolutivo:
     CXPB = 0.8   # Probabilidad de cruzamiento
     MUTPB = 0.2  # Probabilidad de mutación
-    NGEN = 100    # Número de generaciones
+    NGEN = 200    # Número de generaciones
 
     best_fitness_global = -float("inf")  # Inicia con el peor valor posible
     best_individual_global = None  # Para almacenar el mejor individuo
@@ -263,16 +262,9 @@ def main():
     plt.savefig("evolucion_fitness.png")
 
 
-def get_usable_cpu_count():
-    try:
-        return len(os.sched_getaffinity(0))
-    except AttributeError:
-        return multiprocessing.cpu_count()
-
-
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    num_procesos = max(1, get_usable_cpu_count() - 2)
+    num_procesos = max(1, multiprocessing.cpu_count() - 2)
     print(f"Ejecutando paralelismo: {num_procesos} procesos")
     pool = multiprocessing.Pool(num_procesos)
     toolbox.register("map", pool.map)
