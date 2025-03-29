@@ -1,13 +1,7 @@
 from flask import Flask, request, jsonify
-# Asegúrate de tener esta función disponible
 from genetic_algorithm import evaluate
 
 app = Flask(__name__)
-
-
-@app.route('/hola', methods=['POST'])
-def hello():
-    return jsonify({"fitnesses": 0})
 
 
 @app.route('/evaluate', methods=['POST'])
@@ -18,7 +12,6 @@ def evaluate_batch():
     results = []
     for ind in individuals:
         try:
-            # DEAP espera tuplas, pero mandamos solo el float
             fitness = evaluate(ind)[0]
         except Exception as e:
             print(f"Error evaluando individuo: {e}")

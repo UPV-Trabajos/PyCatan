@@ -11,11 +11,57 @@ from Agents.AlexPastorAgent import AlexPastorAgent as apa
 from Agents.AdrianHerasAgent import AdrianHerasAgent as aha
 from Agents.RandomAgent import RandomAgent as ra
 import time
+import requests
 import random
 import numpy as np
+from itertools import cycle
 import matplotlib.pyplot as plt
-import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 from deap import base, creator, tools
+
+# -------------------------------------------------------------------
+# 0. Definicion de maquinas EC2
+# -------------------------------------------------------------------
+EC2_WORKERS = [
+    "http://3.227.2.78:8000/evaluate",
+    "http://3.215.177.175:8000/evaluate",
+    "http://3.235.31.68:8000/evaluate",
+    "http://13.217.208.142:8000/evaluate",
+    "http://3.236.66.160:8000/evaluate",
+    "http://18.208.143.199:8000/evaluate",
+    "http://100.27.251.134:8000/evaluate",
+    "http://13.216.2.22:8000/evaluate"
+]
+
+
+def distributed_http_map(individuals):
+    n_workers = len(EC2_WORKERS)
+    # divide de forma más pareja
+    batches = np.array_split(individuals, n_workers)
+
+    results = []
+
+    def send_request(url, batch):
+        try:
+            json_data = {"individuals": [list(ind) for ind in batch]}
+            response = requests.post(url, json=json_data)
+            response.raise_for_status()
+            fitnesses = response.json()["fitnesses"]
+            return [(f,) for f in fitnesses]
+        except Exception as e:
+            print(f"Error en {url}: {e}")
+            return [(0.0,) for _ in batch]
+
+    urls = cycle(EC2_WORKERS)  # En caso de que batches > workers
+
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        futures = [executor.submit(send_request, next(urls), batch)
+                   for batch in batches]
+        for future in futures:
+            results.extend(future.result())
+
+    return results
+
 
 # -------------------------------------------------------------------
 # 1. Definir Estructuras de Fitness e Individuo
@@ -79,7 +125,7 @@ def simular_catan(idx_agents_to_play: list):
 
 
 def evaluate(individual):
-    num_partidas = 100  # Puedes ajustar el número de simulaciones
+    num_partidas = 50
     total_score = 0.0
     results = []
     for _ in range(num_partidas):
@@ -172,12 +218,12 @@ def main():
     start_time = time.time()  # Inicio del contador
     random.seed(42)
     # Población de 20 individuos
-    pop = toolbox.population(n=100)
+    pop = toolbox.population(n=70)
 
     # Parámetros del algoritmo evolutivo:
     CXPB = 0.8   # Probabilidad de cruzamiento
     MUTPB = 0.2  # Probabilidad de mutación
-    NGEN = 200    # Número de generaciones
+    NGEN = 150    # Número de generaciones
 
     best_fitness_global = -float("inf")  # Inicia con el peor valor posible
     best_individual_global = None  # Para almacenar el mejor individuo
@@ -216,7 +262,7 @@ def main():
 
         # Reevaluar a los individuos que se han modificado
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = map(toolbox.evaluate, invalid_ind)
+        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
@@ -263,11 +309,6 @@ def main():
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    num_procesos = max(1, multiprocessing.cpu_count() - 2)
-    print(f"Ejecutando paralelismo: {num_procesos} procesos")
-    pool = multiprocessing.Pool(num_procesos)
-    toolbox.register("map", pool.map)
+    # toolbox.register("map", distributed_http_map)
+    toolbox.register("map", lambda f, iterable: distributed_http_map(iterable))
     main()
-    pool.close()
-    pool.join()
